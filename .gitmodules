@@ -1,0 +1,6 @@
+[submodule "native/godot-cpp"]
+	path = native/godot-cpp
+	url = https://github.com/GodotNativeTools/godot-cpp
+[submodule "native/extern/googletest"]
+	path = native/extern/googletest
+	url = https://github.com/google/googletest.git

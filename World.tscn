@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://entities/Player.tscn" type="PackedScene" id=5]
+[ext_resource path="res://scripts/terrain.gdns" type="Script" id=7]
+
+[sub_resource type="ProceduralSky" id=1]
+ground_bottom_color = Color( 0.392157, 0.627451, 0.898039, 1 )
+ground_horizon_color = Color( 0.698039, 0.745098, 0.819608, 1 )
+sun_latitude = 60.41
+
+[sub_resource type="Environment" id=2]
+resource_local_to_scene = true
+background_mode = 2
+background_sky = SubResource( 1 )
+ambient_light_color = Color( 1, 1, 1, 1 )
+ambient_light_energy = 0.05
+ambient_light_sky_contribution = 0.0
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+adjustment_contrast = 0.48
+
+[node name="World" type="Spatial"]
+
+[node name="Sun" type="DirectionalLight" parent="."]
+transform = Transform( -0.307846, 0.372112, -0.875651, -0.254303, 0.854681, 0.452604, 0.916821, 0.362013, -0.168481, 0, 32.6249, 0 )
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource( 2 )
+
+[node name="Player" parent="." instance=ExtResource( 5 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.933575, 28.126, 0.998526 )
+jump_power = 7.0
+
+[node name="NativeTerrain" type="Spatial" parent="."]
+script = ExtResource( 7 )
+"Player Path" = NodePath("../Player")
