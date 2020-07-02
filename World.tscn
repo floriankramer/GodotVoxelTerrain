@@ -1,5 +1,6 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
+[ext_resource path="res://scripts/LabelFps.gd" type="Script" id=1]
 [ext_resource path="res://entities/Player.tscn" type="PackedScene" id=5]
 [ext_resource path="res://scripts/terrain.gdns" type="Script" id=7]
 
@@ -22,6 +23,29 @@ adjustment_contrast = 0.48
 
 [node name="World" type="Spatial"]
 
+[node name="ColorRect" type="ColorRect" parent="."]
+margin_right = 40.0
+margin_bottom = 20.0
+color = Color( 0, 0, 0, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ColorRect"]
+margin_right = 40.0
+margin_bottom = 40.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="LabelFPS" type="Label" parent="ColorRect/VBoxContainer"]
+margin_right = 40.0
+margin_bottom = 14.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="Sun" type="DirectionalLight" parent="."]
 transform = Transform( -0.307846, 0.372112, -0.875651, -0.254303, 0.854681, 0.452604, 0.916821, 0.362013, -0.168481, 0, 32.6249, 0 )
 shadow_enabled = true
@@ -31,8 +55,10 @@ environment = SubResource( 2 )
 
 [node name="Player" parent="." instance=ExtResource( 5 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.933575, 28.126, 0.998526 )
+walking_speed = 12.0
 jump_power = 7.0
 
 [node name="NativeTerrain" type="Spatial" parent="."]
 script = ExtResource( 7 )
 "Player Path" = NodePath("../Player")
+"Load Distance" = 6

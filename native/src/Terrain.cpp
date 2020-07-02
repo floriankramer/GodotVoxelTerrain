@@ -8,6 +8,7 @@
 #include <Shape.hpp>
 #include <SpatialMaterial.hpp>
 #include <SurfaceTool.hpp>
+#include <World.hpp>
 #include <chrono>
 #include <thread>
 
@@ -33,7 +34,7 @@ void Terrain::_register_methods() {
   register_property<Terrain, int64_t>("World Ceiling", &Terrain::_ceiling, 3);
 }
 
-Terrain::Terrain() {
+Terrain::Terrain() : Spatial(), _floor(-3), _ceiling(3) {
   _available_chunks = Semaphore::_new();
   _chunks_to_load_mutex = Mutex::_new();
   _loaded_chunks_mutex = Mutex::_new();
@@ -71,10 +72,8 @@ void Terrain::_ready() {
   // Initialize the terrain
   Vector3 player_pos = _player->get_global_transform().origin;
   int64_t co_x = player_pos.x / _chunk_size;
-  int64_t co_y = player_pos.y / _chunk_size;
   int64_t co_z = player_pos.z / _chunk_size;
-  for (int64_t y = co_y - INIT_LOADED_RADIUS; y <= co_y + INIT_LOADED_RADIUS;
-       y++) {
+  for (int64_t y = _floor; y <= _ceiling; y++) {
     for (int64_t x = co_x - INIT_LOADED_RADIUS; x <= co_x + INIT_LOADED_RADIUS;
          x++) {
       for (int64_t z = co_z - INIT_LOADED_RADIUS;
@@ -94,26 +93,30 @@ void Terrain::_process(float delta) {
   //  time_point start_time = high_resolution_clock::now();
 
   _loaded_chunks_mutex->lock();
-  for (Chunk *c : _loaded_chunks) {
+  for (size_t i = 0; i < 1 && !_loaded_chunks.empty(); ++i) {
+    Chunk *c = _loaded_chunks.back();
+    _loaded_chunks.pop_back();
+
     c->lock();
     ChunkCoord cc{int64_t(std::round(c->position.x / _chunk_size)),
                   int64_t(std::round(c->position.y / _chunk_size)),
                   int64_t(std::round(c->position.z / _chunk_size))};
     if (_chunks.count(cc) > 0 && _chunks[cc] == c) {
       if (!c->empty) {
-        add_child(c);
         c->update_tree();
         c->set_state(Chunk::State::ACTIVE);
       }
     } else {
       c->set_state(Chunk::State::UNUSED);
+      // Remove the chunk from the scene
+      c->unload();
+      // Then readd it to the chunk pool
       _chunk_pool_mutex->lock();
       _chunk_pool.push_back(c);
       _chunk_pool_mutex->unlock();
     }
     c->unlock();
   }
-  _loaded_chunks.clear();
   _loaded_chunks_mutex->unlock();
 
   Vector3 player_pos = _player->get_global_transform().origin;
@@ -136,19 +139,19 @@ void Terrain::_process(float delta) {
   }
 
   ChunkCoord player_cc{co_x, co_y, co_z};
-  if (_chunks.count(player_cc) == 0) {
+  if (_chunks.count(player_cc) == 0 && co_y >= _floor && co_y <= _ceiling) {
     load_chunk_sequential(co_x, co_y, co_z);
   }
 
   for (int64_t y = co_y - _loaded_radius; y <= co_y + _loaded_radius; y++) {
-//    if (y < _floor || y > _ceiling) {
-//      continue;
-//    }
+    if (y < _floor || y > _ceiling) {
+      continue;
+    }
     for (int64_t x = co_x - _loaded_radius; x <= co_x + _loaded_radius; x++) {
       for (int64_t z = co_z - _loaded_radius; z <= co_z + _loaded_radius; z++) {
         ChunkCoord cc{x, y, z};
         if (_chunks.count(cc) == 0) {
-          load_chunk(x, y, z);
+          load_chunk_sequential(x, y, z);
         }
       }
     }
@@ -193,7 +196,6 @@ void Terrain::load_chunk(int64_t x, int64_t y, int64_t z) {
   chunk->position = Vector3(x * _chunk_size, y * _chunk_size, z * _chunk_size);
   Transform t;
   t.origin = chunk->position;
-  chunk->set_transform(t);
   chunk->unlock();
 
   _chunks_to_load_mutex->lock();
@@ -212,11 +214,9 @@ void Terrain::load_chunk_sequential(int64_t x, int64_t y, int64_t z) {
   chunk->position = Vector3(x * _chunk_size, y * _chunk_size, z * _chunk_size);
   Transform t;
   t.origin = chunk->position;
-  chunk->set_transform(t);
 
   chunk->build_terrain();
 
-  add_child(chunk);
   chunk->update_tree();
   chunk->set_state(Chunk::State::ACTIVE);
   chunk->unlock();
@@ -244,9 +244,8 @@ void Terrain::unload_chunk(int64_t x, int64_t y, int64_t z) {
     return;
   }
 
-  if (it->second->get_parent() != nullptr) {
-    remove_child(it->second);
-  }
+  // Remove the chunk from the scene
+  it->second->unload();
 
   // The chunk can now be reused
 
@@ -264,10 +263,14 @@ Chunk *Terrain::acquire_chunk() {
   }
   _chunk_pool_mutex->unlock();
   if (chunk == nullptr) {
-    chunk = Chunk::_new();
+    RID space_rid = get_world()->get_space();
+    RID scenario_rid = get_world()->get_scenario();
+    chunk = new Chunk();
     chunk->set_size(_chunk_num_blocks);
     chunk->set_world_size(_chunk_size);
     chunk->set_noise(_noise);
+    chunk->set_space_rid(space_rid);
+    chunk->set_scenario_rid(scenario_rid);
   }
   return chunk;
 }

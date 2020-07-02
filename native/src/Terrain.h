@@ -17,8 +17,8 @@
 
 namespace godot {
 
-class Terrain : public MeshInstance {
-  GODOT_CLASS(Terrain, MeshInstance)
+class Terrain : public Spatial {
+  GODOT_CLASS(Terrain, Spatial)
 
   struct ChunkCoord {
     int64_t x, y, z;

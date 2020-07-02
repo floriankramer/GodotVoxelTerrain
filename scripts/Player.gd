@@ -8,6 +8,8 @@ var motion: Vector3 = Vector3(0, 0, 0)
 
 onready var camera: Camera = get_node("Camera")
 
+export var enable_gravity: bool = true
+
 var yaw = 0
 var pitch = 0
 
@@ -38,32 +40,37 @@ func _physics_process(delta):
 	motion.x = 0
 	motion.z = 0
 	motion.y = 0
-	if is_on_floor():
-		if Input.is_action_pressed("move_forward"):
-			motion += transform.basis[0]
-		if Input.is_action_pressed("move_backward"):
-			motion -= transform.basis[0]
-		if Input.is_action_pressed("move_right"):
-			motion += transform.basis[2]
-		if Input.is_action_pressed("move_left"):
-			motion -= transform.basis[2]
-		
-		motion = motion.normalized()
-		motion.y = 0
-		motion *= walking_speed
-		
-		# compute the correcting force the player wants to apply
-		var horizontal_vel = velocity
-		horizontal_vel.y = 0
-		motion = (motion - horizontal_vel) * walking_force / 2
-		# cap the players horizontal control
-		var mlen = motion.length()
-		if mlen > walking_force:
-			motion *= walking_force / mlen
 	
+	if Input.is_action_pressed("move_forward"):
+		motion += transform.basis[0]
+	if Input.is_action_pressed("move_backward"):
+		motion -= transform.basis[0]
+	if Input.is_action_pressed("move_right"):
+		motion += transform.basis[2]
+	if Input.is_action_pressed("move_left"):
+		motion -= transform.basis[2]
+	
+	motion = motion.normalized()
+	motion.y = 0
+	motion *= walking_speed
+	
+	# compute the correcting force the player wants to apply
+	var horizontal_vel = velocity
+	horizontal_vel.y = 0
+	motion = (motion - horizontal_vel) * walking_force / 2
+	if not is_on_floor():
+		motion *= 0.5
+	# cap the players horizontal control
+	var mlen = motion.length()
+	if mlen > walking_force:
+		motion *= walking_force / mlen
+			
 	# jumping
-	if Input.is_action_just_pressed("jump"):
+	if is_on_floor() and enable_gravity and Input.is_action_just_pressed("jump"):
 		velocity.y += jump_power
-	velocity.y -= 9.81 * delta
+	
+
+	if enable_gravity:
+		velocity.y -= 9.81 * delta
 	velocity += motion * delta
 	velocity = move_and_slide(velocity, Vector3.UP, true)

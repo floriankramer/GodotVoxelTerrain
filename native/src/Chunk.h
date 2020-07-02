@@ -10,15 +10,18 @@
 #include <StaticBody.hpp>
 #include <vector>
 
+#include <SpatialMaterial.hpp>
+
 namespace godot {
-class Chunk : public StaticBody {
-  GODOT_CLASS(Chunk, StaticBody)
+class Chunk {
 
   struct MeshData {
     PoolVector3Array vertices;
     PoolVector3Array normals;
     PoolVector2Array uvs;
     PoolIntArray indices;
+
+    PoolVector3Array collision_faces;
 
     size_t data_index;
     size_t indices_index;
@@ -27,23 +30,14 @@ class Chunk : public StaticBody {
  public:
   enum class State { UNUSED, BUILDING, ACTIVE };
 
-  static void _register_methods();
-
   Chunk();
   virtual ~Chunk();
-
-  void _init();
-  void _ready();
-  void _enter_tree();
-  void _process(float delta);
-
-  void set_rebuild_terrain(bool b);
-  bool get_rebuild_terrain() const;
 
   void set_noise(Ref<OpenSimplexNoise> noise);
 
   void build_terrain();
   void update_tree();
+  void unload();
 
   void lock();
   void unlock();
@@ -56,6 +50,9 @@ class Chunk : public StaticBody {
 
   State get_state();
   void set_state(State s);
+
+  void set_space_rid(RID space_rid);
+  void set_scenario_rid(RID scenario_rid);
 
  private:
   std::vector<bool>::reference voxel(size_t x, size_t y, size_t z);
@@ -84,6 +81,20 @@ class Chunk : public StaticBody {
    */
   bool voxel_or_false(int64_t x, int64_t y, int64_t z);
 
+  /**
+   * @brief Uses the physics server to create a static body and shape for the
+   * chunk.
+   */
+  void init_physics_body();
+  void clear_physics_body();
+
+  /**
+   * @brief Uses the VisualServer to render the mesh in the world.
+   */
+  void init_visual_instance();
+
+  void clear_visual_instance();
+
   Ref<OpenSimplexNoise> _noise;
 
   /**
@@ -98,17 +109,21 @@ class Chunk : public StaticBody {
 
   std::vector<bool> _voxels;
 
-  MeshInstance *_mesh_instance;
-  Ref<ArrayMesh> _mesh;
-  Ref<Shape> _collision_shape;
-  int _collision_shape_owner;
-  int _shape_owner;
-  Object *_shape_owner_dummy;
-
   MeshData _mesh_data;
 
   Mutex *_lock;
   Mutex *_state_lock;
   State _state;
+
+  Ref<SpatialMaterial> _spatial_material;
+
+  RID _shape_rid;
+  RID _body_rid;
+
+  RID _visual_instance;
+  RID _mesh_rid;
+
+  RID _space_rid;
+  RID _scenario_rid;
 };
 }  // namespace godot
