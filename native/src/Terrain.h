@@ -43,6 +43,7 @@ class Terrain : public Spatial {
   void _process(float delta);
 
  private:
+
   std::unordered_map<ChunkCoord, Chunk *, ChunkCoordHash> _chunks;
 
   void unload_chunk(int64_t x, int64_t y, int64_t z);
@@ -62,8 +63,9 @@ class Terrain : public Spatial {
   Spatial *_player;
 
   std::vector<Chunk*> _chunks_to_load;
-  std::vector<Chunk*> _loaded_chunks;
   std::vector<Thread*> _worker_threads;
+
+  std::vector<Chunk*> _loaded_chunks;
 
   Semaphore *_available_chunks;
   Mutex *_chunks_to_load_mutex;

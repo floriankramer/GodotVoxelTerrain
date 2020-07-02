@@ -61,4 +61,3 @@ jump_power = 7.0
 [node name="NativeTerrain" type="Spatial" parent="."]
 script = ExtResource( 7 )
 "Player Path" = NodePath("../Player")
-"Load Distance" = 6

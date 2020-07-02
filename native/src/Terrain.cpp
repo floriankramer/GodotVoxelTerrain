@@ -8,6 +8,7 @@
 #include <Shape.hpp>
 #include <SpatialMaterial.hpp>
 #include <SurfaceTool.hpp>
+#include <VisualServer.hpp>
 #include <World.hpp>
 #include <chrono>
 #include <thread>
@@ -57,6 +58,10 @@ void Terrain::_init() {}
 
 void Terrain::_ready() {
   constexpr int64_t INIT_LOADED_RADIUS = 2;
+
+  //  VisualServer *visual = VisualServer::get_singleton();
+  //  visual->connect("frame_pre_draw", this, "on_pre_draw");
+
   for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i) {
     Thread *thread = Thread::_new();
     thread->start(this, "process_chunks");
@@ -93,7 +98,7 @@ void Terrain::_process(float delta) {
   //  time_point start_time = high_resolution_clock::now();
 
   _loaded_chunks_mutex->lock();
-  for (size_t i = 0; i < 1 && !_loaded_chunks.empty(); ++i) {
+  for (size_t i = 0; i < 2 && !_loaded_chunks.empty(); ++i) {
     Chunk *c = _loaded_chunks.back();
     _loaded_chunks.pop_back();
 
@@ -151,7 +156,7 @@ void Terrain::_process(float delta) {
       for (int64_t z = co_z - _loaded_radius; z <= co_z + _loaded_radius; z++) {
         ChunkCoord cc{x, y, z};
         if (_chunks.count(cc) == 0) {
-          load_chunk_sequential(x, y, z);
+          load_chunk(x, y, z);
         }
       }
     }

@@ -54,6 +54,21 @@ class Chunk {
   void set_space_rid(RID space_rid);
   void set_scenario_rid(RID scenario_rid);
 
+
+  /**
+   * @brief Uses the physics server to create a static body and shape for the
+   * chunk.
+   */
+  void init_physics_body();
+  void clear_physics_body();
+
+  /**
+   * @brief Uses the VisualServer to render the mesh in the world.
+   */
+  void init_visual_instance();
+
+  void clear_visual_instance();
+
  private:
   std::vector<bool>::reference voxel(size_t x, size_t y, size_t z);
 
@@ -81,19 +96,6 @@ class Chunk {
    */
   bool voxel_or_false(int64_t x, int64_t y, int64_t z);
 
-  /**
-   * @brief Uses the physics server to create a static body and shape for the
-   * chunk.
-   */
-  void init_physics_body();
-  void clear_physics_body();
-
-  /**
-   * @brief Uses the VisualServer to render the mesh in the world.
-   */
-  void init_visual_instance();
-
-  void clear_visual_instance();
 
   Ref<OpenSimplexNoise> _noise;
 
